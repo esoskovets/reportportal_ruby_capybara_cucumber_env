@@ -10,3 +10,10 @@ gem 'capybara-screenshot'
 gem 'capybara-webkit'
 gem 'headless'
 gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'
+
+# addons @ 2017-01-05
+
+gem 'rake'
+gem 'send-keys'
+gem 'htmlentities'
+gem 'mini_portile2'

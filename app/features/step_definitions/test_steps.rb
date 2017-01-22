@@ -6,7 +6,6 @@ end
 When(/^I click 'Войти' link to open login page$/) do
   @abstract_page = AbstractPage.new
   @abstract_page.wait_for_enter_to_login(10)
-  print 123.class
   @abstract_page.enter_to_login.click
 end
 
@@ -29,6 +28,7 @@ When(/^I click submit button$/) do
 end
 
 Then(/^I verify that login unsuccessfull$/) do
+  sleep 1
   page.should have_content('Invalid user or password')
 end
 

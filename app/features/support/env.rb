@@ -13,8 +13,6 @@ require 'capybara-screenshot/cucumber'
 require 'headless'
 require 'reportportal'
 
-$feature_name = 'screenshot'
-
 include RSpec::Matchers
 
 RSpec.configure do |config|
@@ -25,69 +23,16 @@ SitePrism.configure do |config|
   config.use_implicit_waits = true
 end
 
-
-
-# # ---------Browser------------------
-#
-# Capybara.configure  do |capybara|
-#   # $timeout = 1000
-#   Capybara.default_max_wait_time = 0
-#
-#   #
-#   Capybara.register_driver :selenium_ff do |app|
-#
-#     client = Selenium::WebDriver::Remote::Http::Default.new
-#     client.timeout = 600
-#
-#     Capybara::Selenium::Driver.new(app, :browser => :firefox, :http_client => client,
-#                                    desired_capabilities: {
-#                                        "ffOptions" => {
-#                                            "args" => %w{ window-size=1580,1024 }
-#                                        }
-#                                    }
-#     )
-#   end
-#
-#   Capybara.register_driver :selenium_ie do |app|
-#     Capybara::Selenium::Driver.new(app, :browser => :ie)
-#   end
-#
-#
-#   Capybara.register_driver :selenium_chrome do |app|
-#
-#     client = Selenium::WebDriver::Remote::Http::Default.new
-#     client.timeout = 600
-#
-#     Capybara::Selenium::Driver.new(app, :browser => :chrome, :http_client => client,
-#                                    desired_capabilities: {
-#                                        "chromeOptions" => {
-#                                            "args" => %w{ window-size=1580,1024 }
-#                                        }
-#                                    }
-#     )
-#   end
-#
-#   capybara.default_driver = :selenium_chrome
-#   capybara.run_server = false
-#
-#   After do |scenario|
-#     if(scenario.failed?)
-#       t = Time.now
-#       page.driver.browser.save_screenshot("reports/#{$feature_name}.png")
-#       embed("#{$feature_name}.png", "image/png", "SCREENSHOT")
-#       puts "reports/#{$feature_name}_#{t.strftime('%H-%M-%S')}.png"
-#     end
-#   end
-#
-# end
-
-
-headless = Headless.new
+headless = Headless.new()
 headless.start
 
-# --------Headless------------
-Capybara.default_driver = :webkit
-Capybara.javascript_driver = :webkit
+Capybara.register_driver :firefox do |app|
+      Capybara::Selenium::Driver.new(app, :browser => :firefox)
+end
+
+Capybara.default_driver = :firefox
+Capybara.javascript_driver = :firefox
+
 Capybara.default_max_wait_time = 0
 Capybara.ignore_hidden_elements = true
 Capybara.visible_text_only = true
@@ -110,24 +55,32 @@ Capybara::Webkit.configure do |config|
   # config.debug = true
 end
 
-#------------capybara-webkit screenshots---------------
 Capybara.save_path = File.expand_path("../../reports", __FILE__)
-Capybara::Screenshot.autosave_on_failure = true
+Capybara::Screenshot.autosave_on_failure = false
 Capybara::Screenshot::RSpec.add_link_to_screenshot_for_failed_examples = true
 Capybara::Screenshot.append_timestamp = true
+Capybara::Screenshot.webkit_options = {width: 1280, height: 1024}
 
-Capybara::Screenshot.class_eval do
-  register_filename_prefix_formatter(:default) do
-    "#{$feature_name}"
-  end
+Capybara::Screenshot.register_driver(:firefox) do |driver, path|
+  driver.browser.save_screenshot(path)
 end
 
-Capybara::Screenshot.webkit_options = {width: 1920, height: 1080}
+Before do
+	  headless.video.start_capture
+end
 
+After do |scenario|
+  if scenario.failed?
 
+    t = Time.now
+    save_file_path = Capybara.save_path << '/' << scenario.name.split.join("_") << '-' << t.strftime("_%Y%d%m_%H%M%S")
 
+    puts save_file_path
 
+    headless.video.stop_and_save(save_file_path + '.mov')
+    page.driver.browser.save_screenshot(save_file_path + '.png')
 
-
-
-
+  else
+    headless.video.stop_and_discard
+  end
+end
